@@ -94,7 +94,11 @@ func (s *Service) Validators(ctx context.Context, stateID string, validatorIndic
 		for i := range validatorStates {
 			states[i] = fmt.Sprintf("%s", validatorStates[i])
 		}
-		url = fmt.Sprintf("%s&status=%s", url, strings.Join(states, ","))
+		if len(validatorIndices) != 0 {
+			url = fmt.Sprintf("%s&status=%s", url, strings.Join(states, ","))
+		} else {
+			url = fmt.Sprintf("%s?status=%s", url, strings.Join(states, ","))
+		}
 	}
 
 	respBodyReader, err := s.get(ctx, url)
