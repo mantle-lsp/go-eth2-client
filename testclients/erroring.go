@@ -596,13 +596,13 @@ func (s *Erroring) Validators(ctx context.Context, stateID string, validatorIndi
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorPubKeys is a list of validator public keys to restrict the returned values.  If no validators public keys are
 // supplied no filter will be applied.
-func (s *Erroring) ValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*apiv1.Validator, error) {
+func (s *Erroring) ValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*apiv1.Validator, bool, error) {
 	if err := s.maybeError(ctx); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	next, isNext := s.next.(consensusclient.ValidatorsProvider)
 	if !isNext {
-		return nil, fmt.Errorf("%s@%s does not support this call", s.next.Name(), s.next.Address())
+		return nil, false, fmt.Errorf("%s@%s does not support this call", s.next.Name(), s.next.Address())
 	}
 	return next.ValidatorsByPubKey(ctx, stateID, validatorPubKeys)
 }

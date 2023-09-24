@@ -371,7 +371,7 @@ type ValidatorsProvider interface {
 	// stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 	// validatorPubKeys is a list of validator public keys to restrict the returned values.  If no validators public keys are
 	// supplied no filter will be applied.
-	ValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*apiv1.Validator, error)
+	ValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*apiv1.Validator, bool, error)
 }
 
 // VoluntaryExitSubmitter is the interface for submitting voluntary exits.

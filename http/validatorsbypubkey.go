@@ -25,7 +25,8 @@ import (
 )
 
 type validatorsByPubKeyJSON struct {
-	Data []*api.Validator `json:"data"`
+	ExecutionOptimistic bool             `json:"execution_optimistic"`
+	Data                []*api.Validator `json:"data"`
 }
 
 // pubKeyChunkSizes defines the per-beacon-node size of a public key chunk.
@@ -71,9 +72,9 @@ func (s *Service) pubKeyChunkSize(ctx context.Context) int {
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorPubKeys is a list of validator public keys to restrict the returned values.  If no validators public keys are
 // supplied no filter will be applied.
-func (s *Service) ValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, error) {
+func (s *Service) ValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
 	if stateID == "" {
-		return nil, errors.New("no state ID specified")
+		return nil, false, errors.New("no state ID specified")
 	}
 
 	if len(validatorPubKeys) > s.pubKeyChunkSize(ctx) {
@@ -91,31 +92,32 @@ func (s *Service) ValidatorsByPubKey(ctx context.Context, stateID string, valida
 
 	respBodyReader, err := s.get(ctx, url)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to request validators")
+		return nil, false, errors.Wrap(err, "failed to request validators")
 	}
 	if respBodyReader == nil {
-		return nil, errors.New("failed to obtain validators")
+		return nil, false, errors.New("failed to obtain validators")
 	}
 
 	var validatorsByPubKeyJSON validatorsByPubKeyJSON
 	if err := json.NewDecoder(respBodyReader).Decode(&validatorsByPubKeyJSON); err != nil {
-		return nil, errors.Wrap(err, "failed to parse validators")
+		return nil, false, errors.Wrap(err, "failed to parse validators")
 	}
 	if validatorsByPubKeyJSON.Data == nil {
-		return nil, errors.New("no validators returned")
+		return nil, false, errors.New("no validators returned")
 	}
 
 	res := make(map[phase0.ValidatorIndex]*api.Validator)
 	for _, validator := range validatorsByPubKeyJSON.Data {
 		res[validator.Index] = validator
 	}
-	return res, nil
+	return res, validatorsByPubKeyJSON.ExecutionOptimistic, nil
 }
 
 // chunkedValidatorsByPubKey obtains the validators a chunk at a time.
-func (s *Service) chunkedValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, error) {
+func (s *Service) chunkedValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
 	res := make(map[phase0.ValidatorIndex]*api.Validator)
 	pubKeyChunkSize := s.pubKeyChunkSize(ctx)
+	executionOptimistic := false
 	for i := 0; i < len(validatorPubKeys); i += pubKeyChunkSize {
 		chunkStart := i
 		chunkEnd := i + pubKeyChunkSize
@@ -123,13 +125,16 @@ func (s *Service) chunkedValidatorsByPubKey(ctx context.Context, stateID string,
 			chunkEnd = len(validatorPubKeys)
 		}
 		chunk := validatorPubKeys[chunkStart:chunkEnd]
-		chunkRes, err := s.ValidatorsByPubKey(ctx, stateID, chunk)
+		chunkRes, isExecutionOptimistic, err := s.ValidatorsByPubKey(ctx, stateID, chunk)
+		if isExecutionOptimistic {
+			executionOptimistic = true
+		}
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to obtain chunk")
+			return nil, false, errors.Wrap(err, "failed to obtain chunk")
 		}
 		for k, v := range chunkRes {
 			res[k] = v
 		}
 	}
-	return res, nil
+	return res, executionOptimistic, nil
 }

@@ -64,7 +64,7 @@ func TestValidatorsByPubKey(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validators, err := service.(client.ValidatorsProvider).ValidatorsByPubKey(ctx, test.stateID, nil)
+			validators, _, err := service.(client.ValidatorsProvider).ValidatorsByPubKey(ctx, test.stateID, nil)
 			if test.expectedErrorCode != 0 {
 				require.Contains(t, err.Error(), fmt.Sprintf("%d", test.expectedErrorCode))
 			} else {

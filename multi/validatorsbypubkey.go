@@ -30,20 +30,25 @@ func (s *Service) ValidatorsByPubKey(ctx context.Context,
 	validatorPubKeys []phase0.BLSPubKey,
 ) (
 	map[phase0.ValidatorIndex]*api.Validator,
+	bool,
 	error,
 ) {
+	executionOptimistic := false
 	res, err := s.doCall(ctx, func(ctx context.Context, client consensusclient.Service) (interface{}, error) {
-		block, err := client.(consensusclient.ValidatorsProvider).ValidatorsByPubKey(ctx, stateID, validatorPubKeys)
+		block, isExecutionOptimistic, err := client.(consensusclient.ValidatorsProvider).ValidatorsByPubKey(ctx, stateID, validatorPubKeys)
 		if err != nil {
 			return nil, err
+		}
+		if isExecutionOptimistic {
+			executionOptimistic = true
 		}
 		return block, nil
 	}, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if res == nil {
-		return nil, nil
+		return nil, false, nil
 	}
-	return res.(map[phase0.ValidatorIndex]*api.Validator), nil
+	return res.(map[phase0.ValidatorIndex]*api.Validator), executionOptimistic, nil
 }
