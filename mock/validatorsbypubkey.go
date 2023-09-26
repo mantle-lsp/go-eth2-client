@@ -24,6 +24,6 @@ import (
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorPubKeys is a list of validator public keys to restrict the returned values.  If no validators public keys are
 // supplied no filter will be applied.
-func (s *Service) ValidatorsByPubKey(_ context.Context, _ string, _ []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, error) {
-	return map[phase0.ValidatorIndex]*api.Validator{}, nil
+func (s *Service) ValidatorsByPubKey(_ context.Context, _ string, _ []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
+	return map[phase0.ValidatorIndex]*api.Validator{}, true, nil
 }
