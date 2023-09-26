@@ -33,14 +33,14 @@ func (s *Service) ValidatorsByPubKey(ctx context.Context,
 	bool,
 	error,
 ) {
-	executionOptimistic := false
+	finalized := true
 	res, err := s.doCall(ctx, func(ctx context.Context, client consensusclient.Service) (interface{}, error) {
-		block, isExecutionOptimistic, err := client.(consensusclient.ValidatorsProvider).ValidatorsByPubKey(ctx, stateID, validatorPubKeys)
+		block, isFinalized, err := client.(consensusclient.ValidatorsProvider).ValidatorsByPubKey(ctx, stateID, validatorPubKeys)
 		if err != nil {
 			return nil, err
 		}
-		if isExecutionOptimistic {
-			executionOptimistic = true
+		if isFinalized {
+			finalized = false
 		}
 		return block, nil
 	}, nil)
@@ -50,5 +50,5 @@ func (s *Service) ValidatorsByPubKey(ctx context.Context,
 	if res == nil {
 		return nil, false, nil
 	}
-	return res.(map[phase0.ValidatorIndex]*api.Validator), executionOptimistic, nil
+	return res.(map[phase0.ValidatorIndex]*api.Validator), finalized, nil
 }

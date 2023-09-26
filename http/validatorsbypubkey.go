@@ -25,8 +25,8 @@ import (
 )
 
 type validatorsByPubKeyJSON struct {
-	ExecutionOptimistic bool             `json:"execution_optimistic"`
-	Data                []*api.Validator `json:"data"`
+	Finalized bool             `json:"finalized"`
+	Data      []*api.Validator `json:"data"`
 }
 
 // pubKeyChunkSizes defines the per-beacon-node size of a public key chunk.
@@ -110,14 +110,14 @@ func (s *Service) ValidatorsByPubKey(ctx context.Context, stateID string, valida
 	for _, validator := range validatorsByPubKeyJSON.Data {
 		res[validator.Index] = validator
 	}
-	return res, validatorsByPubKeyJSON.ExecutionOptimistic, nil
+	return res, validatorsByPubKeyJSON.Finalized, nil
 }
 
 // chunkedValidatorsByPubKey obtains the validators a chunk at a time.
 func (s *Service) chunkedValidatorsByPubKey(ctx context.Context, stateID string, validatorPubKeys []phase0.BLSPubKey) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
 	res := make(map[phase0.ValidatorIndex]*api.Validator)
 	pubKeyChunkSize := s.pubKeyChunkSize(ctx)
-	executionOptimistic := false
+	finalized := false
 	for i := 0; i < len(validatorPubKeys); i += pubKeyChunkSize {
 		chunkStart := i
 		chunkEnd := i + pubKeyChunkSize
@@ -125,9 +125,9 @@ func (s *Service) chunkedValidatorsByPubKey(ctx context.Context, stateID string,
 			chunkEnd = len(validatorPubKeys)
 		}
 		chunk := validatorPubKeys[chunkStart:chunkEnd]
-		chunkRes, isExecutionOptimistic, err := s.ValidatorsByPubKey(ctx, stateID, chunk)
-		if isExecutionOptimistic {
-			executionOptimistic = true
+		chunkRes, isFinalized, err := s.ValidatorsByPubKey(ctx, stateID, chunk)
+		if isFinalized {
+			finalized = true
 		}
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to obtain chunk")
@@ -136,5 +136,5 @@ func (s *Service) chunkedValidatorsByPubKey(ctx context.Context, stateID string,
 			res[k] = v
 		}
 	}
-	return res, executionOptimistic, nil
+	return res, finalized, nil
 }
