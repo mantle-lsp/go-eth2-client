@@ -31,20 +31,25 @@ func (s *Service) Validators(ctx context.Context,
 	validatorStates []v1.ValidatorState,
 ) (
 	map[phase0.ValidatorIndex]*api.Validator,
+	bool,
 	error,
 ) {
+	finalized := true
 	res, err := s.doCall(ctx, func(ctx context.Context, client consensusclient.Service) (interface{}, error) {
-		block, err := client.(consensusclient.ValidatorsProvider).Validators(ctx, stateID, validatorIndices, validatorStates)
+		block, isFinalized, err := client.(consensusclient.ValidatorsProvider).Validators(ctx, stateID, validatorIndices, validatorStates)
 		if err != nil {
 			return nil, err
+		}
+		if !isFinalized {
+			finalized = false
 		}
 		return block, nil
 	}, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if res == nil {
-		return nil, nil
+		return nil, false, nil
 	}
-	return res.(map[phase0.ValidatorIndex]*api.Validator), nil
+	return res.(map[phase0.ValidatorIndex]*api.Validator), finalized, nil
 }

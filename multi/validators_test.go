@@ -52,7 +52,7 @@ func TestValidators(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 128; i++ {
-		res, err := multiClient.(consensusclient.ValidatorsProvider).Validators(ctx, "1", []phase0.ValidatorIndex{}, []v1.ValidatorState{})
+		res, _, err := multiClient.(consensusclient.ValidatorsProvider).Validators(ctx, "1", []phase0.ValidatorIndex{}, []v1.ValidatorState{})
 		require.NoError(t, err)
 		require.NotNil(t, res)
 	}

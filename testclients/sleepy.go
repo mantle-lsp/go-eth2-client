@@ -396,11 +396,11 @@ func (s *Sleepy) ValidatorBalances(ctx context.Context, stateID string, validato
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorIndices is a list of validator indices to restrict the returned values.  If no validators IDs are supplied no filter
 // will be applied.
-func (s *Sleepy) Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*apiv1.Validator, error) {
+func (s *Sleepy) Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*apiv1.Validator, bool, error) {
 	s.sleep(ctx)
 	next, isNext := s.next.(consensusclient.ValidatorsProvider)
 	if !isNext {
-		return nil, errors.New("next does not support this call")
+		return nil, false, errors.New("next does not support this call")
 	}
 	return next.Validators(ctx, stateID, validatorIndices, validatorStates)
 }

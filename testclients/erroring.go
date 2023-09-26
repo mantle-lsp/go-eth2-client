@@ -581,13 +581,13 @@ func (s *Erroring) ValidatorBalances(ctx context.Context, stateID string, valida
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorIndices is a list of validator indices to restrict the returned values.  If no validators IDs are supplied no filter
 // will be applied.
-func (s *Erroring) Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*apiv1.Validator, error) {
+func (s *Erroring) Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*apiv1.Validator, bool, error) {
 	if err := s.maybeError(ctx); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	next, isNext := s.next.(consensusclient.ValidatorsProvider)
 	if !isNext {
-		return nil, fmt.Errorf("%s@%s does not support this call", s.next.Name(), s.next.Address())
+		return nil, false, fmt.Errorf("%s@%s does not support this call", s.next.Name(), s.next.Address())
 	}
 	return next.Validators(ctx, stateID, validatorIndices, validatorStates)
 }

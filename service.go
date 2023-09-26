@@ -365,7 +365,7 @@ type ValidatorsProvider interface {
 	// will be applied.
 	// validatorStates is a list of validator states to restrict the returned values.  If no validators states are supplied no filter
 	// will be applied.
-	Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*apiv1.Validator, error)
+	Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*apiv1.Validator, bool, error)
 
 	// ValidatorsByPubKey provides the validators, with their balance and status, for a given state.
 	// stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".

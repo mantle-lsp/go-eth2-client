@@ -88,7 +88,7 @@ func TestValidators(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			validators, err := service.(client.ValidatorsProvider).Validators(ctx, test.stateID, test.validatorIndices, test.validatorStates)
+			validators, _, err := service.(client.ValidatorsProvider).Validators(ctx, test.stateID, test.validatorIndices, test.validatorStates)
 			if test.expectedErrorCode != 0 {
 				require.Contains(t, err.Error(), fmt.Sprintf("%d", test.expectedErrorCode))
 			} else {

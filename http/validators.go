@@ -26,7 +26,8 @@ import (
 )
 
 type validatorsJSON struct {
-	Data []*api.Validator `json:"data"`
+	Finalized bool             `json:"finalized"`
+	Data      []*api.Validator `json:"data"`
 }
 
 // indexChunkSizes defines the per-beacon-node size of an index chunk.
@@ -72,9 +73,9 @@ func (s *Service) indexChunkSize(ctx context.Context) int {
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorIndices is a list of validators to restrict the returned values.  If no validators are supplied no filter will be applied.
 // validatorStates is a list of validator states to restrict the returned values.  If no states are supplied no filter will be applied.
-func (s *Service) Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*api.Validator, error) {
+func (s *Service) Validators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
 	if stateID == "" {
-		return nil, errors.New("no state ID specified")
+		return nil, false, errors.New("no state ID specified")
 	}
 
 	if len(validatorIndices) > s.indexChunkSize(ctx) {
@@ -103,31 +104,32 @@ func (s *Service) Validators(ctx context.Context, stateID string, validatorIndic
 
 	respBodyReader, err := s.get(ctx, url)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to request validators")
+		return nil, false, errors.Wrap(err, "failed to request validators")
 	}
 	if respBodyReader == nil {
-		return nil, errors.New("failed to obtain validators")
+		return nil, false, errors.New("failed to obtain validators")
 	}
 
 	var validatorsJSON validatorsJSON
 	if err := json.NewDecoder(respBodyReader).Decode(&validatorsJSON); err != nil {
-		return nil, errors.Wrap(err, "failed to parse validators")
+		return nil, false, errors.Wrap(err, "failed to parse validators")
 	}
 	if validatorsJSON.Data == nil {
-		return nil, errors.New("no validators returned")
+		return nil, false, errors.New("no validators returned")
 	}
 
 	res := make(map[phase0.ValidatorIndex]*api.Validator)
 	for _, validator := range validatorsJSON.Data {
 		res[validator.Index] = validator
 	}
-	return res, nil
+	return res, validatorsJSON.Finalized, nil
 }
 
 // chunkedValidators obtains the validators a chunk at a time.
-func (s *Service) chunkedValidators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*api.Validator, error) {
+func (s *Service) chunkedValidators(ctx context.Context, stateID string, validatorIndices []phase0.ValidatorIndex, validatorStates []v1.ValidatorState) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
 	res := make(map[phase0.ValidatorIndex]*api.Validator)
 	indexChunkSize := s.indexChunkSize(ctx)
+	finalized := true
 	for i := 0; i < len(validatorIndices); i += indexChunkSize {
 		chunkStart := i
 		chunkEnd := i + indexChunkSize
@@ -135,13 +137,16 @@ func (s *Service) chunkedValidators(ctx context.Context, stateID string, validat
 			chunkEnd = len(validatorIndices)
 		}
 		chunk := validatorIndices[chunkStart:chunkEnd]
-		chunkRes, err := s.Validators(ctx, stateID, chunk, validatorStates)
+		chunkRes, isFinalized, err := s.Validators(ctx, stateID, chunk, validatorStates)
+		if isFinalized {
+			finalized = true
+		}
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to obtain chunk")
+			return nil, false, errors.Wrap(err, "failed to obtain chunk")
 		}
 		for k, v := range chunkRes {
 			res[k] = v
 		}
 	}
-	return res, nil
+	return res, finalized, nil
 }
