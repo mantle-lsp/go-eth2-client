@@ -680,13 +680,13 @@ func (s *Erroring) DepositContract(ctx context.Context) (*apiv1.DepositContract,
 }
 
 // SignedBeaconBlock fetches a signed beacon block given a block ID.
-func (s *Erroring) SignedBeaconBlock(ctx context.Context, blockID string) (*spec.VersionedSignedBeaconBlock, error) {
+func (s *Erroring) SignedBeaconBlock(ctx context.Context, blockID string) (*spec.VersionedSignedBeaconBlock, bool, error) {
 	if err := s.maybeError(ctx); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	next, isNext := s.next.(consensusclient.SignedBeaconBlockProvider)
 	if !isNext {
-		return nil, fmt.Errorf("%s@%s does not support this call", s.next.Name(), s.next.Address())
+		return nil, false, fmt.Errorf("%s@%s does not support this call", s.next.Name(), s.next.Address())
 	}
 	return next.SignedBeaconBlock(ctx, blockID)
 }

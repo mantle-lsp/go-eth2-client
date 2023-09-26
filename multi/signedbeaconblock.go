@@ -26,20 +26,25 @@ func (s *Service) SignedBeaconBlock(ctx context.Context,
 	blockID string,
 ) (
 	*spec.VersionedSignedBeaconBlock,
+	bool,
 	error,
 ) {
+	finalized := true
 	res, err := s.doCall(ctx, func(ctx context.Context, client consensusclient.Service) (interface{}, error) {
-		block, err := client.(consensusclient.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, blockID)
+		block, isFinalized, err := client.(consensusclient.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, blockID)
 		if err != nil {
 			return nil, err
+		}
+		if !isFinalized {
+			finalized = false
 		}
 		return block, nil
 	}, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if res == nil {
-		return nil, nil
+		return nil, false, nil
 	}
-	return res.(*spec.VersionedSignedBeaconBlock), nil
+	return res.(*spec.VersionedSignedBeaconBlock), finalized, nil
 }

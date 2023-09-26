@@ -112,7 +112,7 @@ type DepositContractProvider interface {
 // SignedBeaconBlockProvider is the interface for providing beacon blocks.
 type SignedBeaconBlockProvider interface {
 	// SignedBeaconBlock fetches a signed beacon block given a block ID.
-	SignedBeaconBlock(ctx context.Context, blockID string) (*spec.VersionedSignedBeaconBlock, error)
+	SignedBeaconBlock(ctx context.Context, blockID string) (*spec.VersionedSignedBeaconBlock, bool, error)
 }
 
 // BeaconBlockBlobsProvider is the interface for providing blobs for a given beacon block.

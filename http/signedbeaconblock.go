@@ -30,80 +30,91 @@ import (
 )
 
 type phase0SignedBeaconBlockJSON struct {
-	Data *phase0.SignedBeaconBlock `json:"data"`
+	Finalized bool                      `json:"finalized"`
+	Data      *phase0.SignedBeaconBlock `json:"data"`
 }
 
 type altairSignedBeaconBlockJSON struct {
-	Data *altair.SignedBeaconBlock `json:"data"`
+	Finalized bool                      `json:"finalized"`
+	Data      *altair.SignedBeaconBlock `json:"data"`
 }
 
 type bellatrixSignedBeaconBlockJSON struct {
-	Data *bellatrix.SignedBeaconBlock `json:"data"`
+	Finalized bool                         `json:"finalized"`
+	Data      *bellatrix.SignedBeaconBlock `json:"data"`
 }
 
 type capellaSignedBeaconBlockJSON struct {
-	Data *capella.SignedBeaconBlock `json:"data"`
+	Finalized bool                       `json:"finalized"`
+	Data      *capella.SignedBeaconBlock `json:"data"`
 }
 
 type denebSignedBeaconBlockJSON struct {
-	Data *deneb.SignedBeaconBlock `json:"data"`
+	Finalized bool                     `json:"finalized"`
+	Data      *deneb.SignedBeaconBlock `json:"data"`
 }
 
 // SignedBeaconBlock fetches a signed beacon block given a block ID.
 // N.B if a signed beacon block for the block ID is not available this will return nil without an error.
-func (s *Service) SignedBeaconBlock(ctx context.Context, blockID string) (*spec.VersionedSignedBeaconBlock, error) {
+func (s *Service) SignedBeaconBlock(ctx context.Context, blockID string) (*spec.VersionedSignedBeaconBlock, bool, error) {
 	respBodyReader, err := s.get(ctx, fmt.Sprintf("/eth/v2/beacon/blocks/%s", blockID))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to request signed beacon block")
+		return nil, false, errors.Wrap(err, "failed to request signed beacon block")
 	}
 	if respBodyReader == nil {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	var dataBodyReader bytes.Buffer
 	metadataReader := io.TeeReader(respBodyReader, &dataBodyReader)
 	var metadata responseMetadata
 	if err := json.NewDecoder(metadataReader).Decode(&metadata); err != nil {
-		return nil, errors.Wrap(err, "failed to parse response")
+		return nil, false, errors.Wrap(err, "failed to parse response")
 	}
 	res := &spec.VersionedSignedBeaconBlock{
 		Version: metadata.Version,
 	}
 
+	finalized := true
 	switch metadata.Version {
 	case spec.DataVersionPhase0:
 		var resp phase0SignedBeaconBlockJSON
 		if err := json.NewDecoder(&dataBodyReader).Decode(&resp); err != nil {
-			return nil, errors.Wrap(err, "failed to parse phase 0 signed beacon block")
+			return nil, false, errors.Wrap(err, "failed to parse phase 0 signed beacon block")
 		}
 		res.Phase0 = resp.Data
+		finalized = resp.Finalized
 	case spec.DataVersionAltair:
 		var resp altairSignedBeaconBlockJSON
 		if err := json.NewDecoder(&dataBodyReader).Decode(&resp); err != nil {
-			return nil, errors.Wrap(err, "failed to parse altair signed beacon block")
+			return nil, false, errors.Wrap(err, "failed to parse altair signed beacon block")
 		}
 		res.Altair = resp.Data
+		finalized = resp.Finalized
 	case spec.DataVersionBellatrix:
 		var resp bellatrixSignedBeaconBlockJSON
 		if err := json.NewDecoder(&dataBodyReader).Decode(&resp); err != nil {
-			return nil, errors.Wrap(err, "failed to parse bellatrix signed beacon block")
+			return nil, false, errors.Wrap(err, "failed to parse bellatrix signed beacon block")
 		}
 		res.Bellatrix = resp.Data
+		finalized = resp.Finalized
 	case spec.DataVersionCapella:
 		var resp capellaSignedBeaconBlockJSON
 		if err := json.NewDecoder(&dataBodyReader).Decode(&resp); err != nil {
-			return nil, errors.Wrap(err, "failed to parse capella signed beacon block")
+			return nil, false, errors.Wrap(err, "failed to parse capella signed beacon block")
 		}
 		res.Capella = resp.Data
+		finalized = resp.Finalized
 	case spec.DataVersionDeneb:
 		var resp denebSignedBeaconBlockJSON
 		if err := json.NewDecoder(&dataBodyReader).Decode(&resp); err != nil {
-			return nil, errors.Wrap(err, "failed to parse deneb signed beacon block")
+			return nil, false, errors.Wrap(err, "failed to parse deneb signed beacon block")
 		}
 		res.Deneb = resp.Data
+		finalized = resp.Finalized
 	default:
-		return nil, fmt.Errorf("unhandled block version %s", metadata.Version)
+		return nil, false, fmt.Errorf("unhandled block version %s", metadata.Version)
 	}
 
-	return res, nil
+	return res, finalized, nil
 }

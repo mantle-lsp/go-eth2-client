@@ -49,7 +49,7 @@ func TestSignedBeaconBlock(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res, err := service.(client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, test.stateID)
+			res, _, err := service.(client.SignedBeaconBlockProvider).SignedBeaconBlock(ctx, test.stateID)
 			require.NoError(t, err)
 			require.NotNil(t, res)
 		})
