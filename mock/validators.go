@@ -17,6 +17,7 @@ import (
 	"context"
 
 	api "github.com/attestantio/go-eth2-client/api/v1"
+	v1 "github.com/attestantio/go-eth2-client/api/v1"
 	"github.com/attestantio/go-eth2-client/spec/phase0"
 )
 
@@ -24,6 +25,6 @@ import (
 // stateID can be a slot number or state root, or one of the special values "genesis", "head", "justified" or "finalized".
 // validatorIndices is a list of validator indices to restrict the returned values.  If no validators IDs are supplied no filter
 // will be applied.
-func (s *Service) Validators(_ context.Context, _ string, _ []phase0.ValidatorIndex) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
+func (s *Service) Validators(_ context.Context, _ string, _ []phase0.ValidatorIndex, _ []v1.ValidatorState) (map[phase0.ValidatorIndex]*api.Validator, bool, error) {
 	return map[phase0.ValidatorIndex]*api.Validator{}, true, nil
 }
