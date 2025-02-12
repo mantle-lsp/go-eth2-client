@@ -54,10 +54,11 @@ func (s *Service) Validators(ctx context.Context,
 	}
 	span.SetAttributes(attribute.Int("validators", len(opts.Indices)+len(opts.PubKeys)))
 
-	if len(opts.Indices) == 0 && len(opts.PubKeys) == 0 {
-		// Request is for all validators; fetch from state.
-		return s.validatorsFromState(ctx, opts)
-	}
+	// don't fetch from beacon state, response size is too large
+	//if len(opts.Indices) == 0 && len(opts.PubKeys) == 0 {
+	//	// Request is for all validators; fetch from state.
+	//	return s.validatorsFromState(ctx, opts)
+	//}
 
 	endpoint := fmt.Sprintf("/eth/v1/beacon/states/%s/validators", opts.State)
 	query := ""
