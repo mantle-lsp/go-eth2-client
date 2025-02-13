@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/attestantio/go-eth2-client/spec/electra"
 
@@ -52,6 +53,13 @@ func (s *Service) SignedBeaconBlock(ctx context.Context,
 	endpoint := fmt.Sprintf("/eth/v2/beacon/blocks/%s", opts.Block)
 	httpResponse, err := s.get(ctx, endpoint, "", &opts.Common, true)
 	if err != nil {
+		var apiErr *api.Error
+		if errors.As(err, &apiErr) {
+			// miss slot
+			if apiErr.StatusCode == http.StatusNotFound {
+				return nil, nil
+			}
+		}
 		return nil, err
 	}
 
