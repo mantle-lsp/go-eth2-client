@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
 
 	client "github.com/attestantio/go-eth2-client"
 	"github.com/attestantio/go-eth2-client/api"
@@ -66,6 +68,16 @@ func (s *Service) SyncCommitteeRewards(ctx context.Context,
 	}
 
 	httpResponse, err := s.post(ctx, endpoint, query, &opts.Common, bytes.NewReader(reqData), ContentTypeJSON, map[string]string{})
+	if err != nil {
+		var apiError *api.Error
+		if errors.As(err, &apiError) {
+			// missed slot
+			if apiError.StatusCode == http.StatusNotFound {
+				log.Println("sync committee rewards missed slot: ", opts.Block)
+				return nil, nil
+			}
+		}
+	}
 	if err != nil {
 		return nil, errors.Join(errors.New("failed to request sync committee rewards"), err)
 	}
