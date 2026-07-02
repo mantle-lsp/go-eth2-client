@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -221,6 +222,7 @@ func (s *Service) clearStaticValues() {
 // internal flags appropriately.
 func (s *Service) checkDVT(ctx context.Context) error {
 	response, err := s.NodeVersion(ctx, &api.NodeVersionOpts{})
+	log.Println("node version resp:", response, "err:", err)
 	if err != nil {
 		return errors.Join(errors.New("failed to obtain node version for DVT check"), err)
 	}
@@ -269,6 +271,7 @@ func (s *Service) CheckConnectionState(ctx context.Context) {
 		synced = wasSynced
 	} else {
 		response, err := s.NodeSyncing(ctx, &api.NodeSyncingOpts{})
+		log.Println("node syncing resp:", response, "err:", err)
 		if err != nil {
 			log.Debug().Err(err).Msg("Failed to obtain sync state from node")
 			active = false
