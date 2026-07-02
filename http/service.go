@@ -269,6 +269,8 @@ func (s *Service) CheckConnectionState(ctx context.Context) {
 		// Means there is another ping running, just use current info.
 		active = wasActive
 		synced = wasSynced
+
+		log.Println("in current active state:", active, synced)
 	} else {
 		response, err := s.NodeSyncing(ctx, &api.NodeSyncingOpts{})
 		log.Println("node syncing resp:", response, "err:", err)
