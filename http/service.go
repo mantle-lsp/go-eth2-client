@@ -222,7 +222,7 @@ func (s *Service) clearStaticValues() {
 // internal flags appropriately.
 func (s *Service) checkDVT(ctx context.Context) error {
 	response, err := s.NodeVersion(ctx, &api.NodeVersionOpts{})
-	log.Println("node version resp:", response, "err:", err)
+	log.Printf("node version resp: %v err: %v", response, err)
 	if err != nil {
 		return errors.Join(errors.New("failed to obtain node version for DVT check"), err)
 	}
@@ -265,16 +265,16 @@ func (s *Service) CheckConnectionState(ctx context.Context) {
 	var synced bool
 
 	acquired := s.pingSem.TryAcquire(1)
-	log.Println("acquired ping sem: ", acquired)
+	log.Printf("acquired ping sem: %v", acquired)
 	if !acquired {
 		// Means there is another ping running, just use current info.
 		active = wasActive
 		synced = wasSynced
 
-		log.Println("in current active state:", active, synced)
+		log.Printf("in current active state: %v %v", active, synced)
 	} else {
 		response, err := s.NodeSyncing(ctx, &api.NodeSyncingOpts{})
-		log.Println("node syncing resp:", response, "err:", err)
+		log.Printf("node syncing resp: %v, err: %v", response, err)
 		if err != nil {
 			log.Debug().Err(err).Msg("Failed to obtain sync state from node")
 			active = false
