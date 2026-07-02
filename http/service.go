@@ -265,6 +265,7 @@ func (s *Service) CheckConnectionState(ctx context.Context) {
 	var synced bool
 
 	acquired := s.pingSem.TryAcquire(1)
+	log.Println("acquired ping sem: ", acquired)
 	if !acquired {
 		// Means there is another ping running, just use current info.
 		active = wasActive
